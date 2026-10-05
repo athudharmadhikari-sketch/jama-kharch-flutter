@@ -8,12 +8,13 @@ import '../models/transaction_model.dart';
 class TransactionFormScreen
     extends StatefulWidget {
   final bool isJama;
+  final Map<String, dynamic>? data;
   final TransactionModel? existingRecord;
 
   const TransactionFormScreen({
     super.key,
     required this.isJama,
-    this.existingRecord,
+    this.existingRecord, this.data,
   });
 
   @override
@@ -34,7 +35,11 @@ class _TransactionFormScreenState
 
   final TextEditingController amountController =
       TextEditingController();
+ int currentStep = 0;
+  bool isSubmitting = false;
 
+  List<bool> stepValidationStatus = [false, false];
+ final _formKey = GlobalKey<FormState>();
   DateTime selectedDate =
       DateTime.now();
 
@@ -150,134 +155,52 @@ class _TransactionFormScreenState
     });
   }
 
-  // ============================================================
-  // SUBMIT
-  // ============================================================
+Future<void> submit() async {
+  try {
+   final payload = {
+   "name": nameController.text.trim(),
+      "date": selectedDate.toIso8601String(),
+      "type": selectedType,
+      "amount": amountController.text.trim(),
+      "status": selectedStatus,
+      "transactionType":
+          widget.isJama ? "jama" : "kharch",
+};
 
-  Future<void> submit() async {
-    if (!formKey.currentState!
-        .validate()) {
-      return;
-    }
-
-    final amount =
-        double.tryParse(
-      amountController.text
-          .trim(),
-    );
-
-    if (amount == null ||
-        amount <= 0) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            'Please enter a valid amount',
-            style: GoogleFonts.poppins(),
-          ),
-        ),
+  
+if (widget.data != null) {
+  await ApiService.put(
+    "/transactions/${widget.data!['_id']}",
+    payload,
+  );
+} else {
+      await ApiService.post(
+        "/transactions",
+        payload,
       );
-
-      return;
     }
 
-    try {
-      setState(() {
-        isSaving = true;
-      });
-
-      if (isEdit) {
-        // ======================================================
-        // UPDATE
-        // ======================================================
-
-        await ApiService.updateTransaction(
-          id:
-              widget.existingRecord!.id,
-
-          name:
-              nameController.text.trim(),
-
-          date: selectedDate,
-
-          type: selectedType,
-
-          amount: amount,
-
-          status: selectedStatus,
-        );
-      } else {
-        // ======================================================
-        // CREATE
-        // ======================================================
-
-        final created =
-            await ApiService
-                .createTransaction(
-          name:
-              nameController.text.trim(),
-
-          date: selectedDate,
-
-          type: selectedType,
-
-          amount: amount,
-
-          status: selectedStatus,
-
-          transactionType:
-              widget.isJama
-                  ? 'jama'
-                  : 'kharch',
-        );
-
-        debugPrint(
-          'Created Reg No: ${created.regNo}',
-        );
-      }
-
+    setState(() => isSubmitting = false);
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            isEdit
-                ? '$title updated successfully'
-                : '$title added successfully',
-
-            style:
-                GoogleFonts.poppins(),
-          ),
+  Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransactionListScreen(
+          isJama: widget.isJama,
         ),
-      );
-
-    Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (_) => const TransactionListScreen(
-      isJama: true,
-    ),
+      ),
+    );
+  } catch (e) {
+  ScaffoldMessenger.of(context).showSnackBar(
+  SnackBar(
+    content: Text(e.toString()),
   ),
 );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString(),
-            style: GoogleFonts.poppins(),
-          ),
-        ),
-      );
-
-      setState(() {
-        isSaving = false;
-      });
-    }
   }
+}
+ 
+
+
 
   // ============================================================
   // BUILD

@@ -144,10 +144,10 @@ class _HomeScreenState
         centerTitle: true,
 
         title: Text(
-          'जमा खर्च',
+          'आई तुळजाभवानी मित्र मंडळ',
           style: GoogleFonts.poppins(
             fontSize: 21,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             color: Colors.black87,
           ),
         ),

@@ -1,3 +1,4 @@
+
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -10,17 +11,7 @@ class ApiService {
   // ============================================================
 
   static const String baseUrl =
-      'https://jama-kharch-api.onrender.com/api';
-
-  // For physical Android phone use your computer IP:
-  //
-  // static const String baseUrl =
-  //     'http://192.168.1.100:5000/api';
-
-  // For deployed backend:
-  //
-  // static const String baseUrl =
-  //     'https://your-backend-url.com/api';
+      'https://jama-kharch-backend.onrender.com/api';
 
   // ============================================================
   // HEADERS
@@ -34,22 +25,169 @@ class ApiService {
   }
 
   // ============================================================
+  // GENERIC GET
+  // ============================================================
+
+  static Future<dynamic> get(
+    String endpoint,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+      );
+
+      if (response.statusCode >= 200 &&
+          response.statusCode < 300) {
+        if (response.body.isEmpty) {
+          return null;
+        }
+
+        return jsonDecode(response.body);
+      }
+
+      throw Exception(
+        _getErrorMessage(response),
+      );
+    } catch (e) {
+      throw Exception(
+        e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
+      );
+    }
+  }
+
+  // ============================================================
+  // GENERIC POST
+  // ============================================================
+
+  static Future<dynamic> post(
+    String endpoint,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode >= 200 &&
+          response.statusCode < 300) {
+        if (response.body.isEmpty) {
+          return null;
+        }
+
+        return jsonDecode(response.body);
+      }
+
+      throw Exception(
+        _getErrorMessage(response),
+      );
+    } catch (e) {
+      throw Exception(
+        e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
+      );
+    }
+  }
+
+  // ============================================================
+  // GENERIC PUT
+  // ============================================================
+
+  static Future<dynamic> put(
+    String endpoint,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode >= 200 &&
+          response.statusCode < 300) {
+        if (response.body.isEmpty) {
+          return null;
+        }
+
+        return jsonDecode(response.body);
+      }
+
+      throw Exception(
+        _getErrorMessage(response),
+      );
+    } catch (e) {
+      throw Exception(
+        e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
+      );
+    }
+  }
+
+  // ============================================================
+  // GENERIC DELETE
+  // ============================================================
+
+  static Future<dynamic> delete(
+    String endpoint,
+  ) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+      );
+
+      if (response.statusCode >= 200 &&
+          response.statusCode < 300) {
+        if (response.body.isEmpty) {
+          return null;
+        }
+
+        return jsonDecode(response.body);
+      }
+
+      throw Exception(
+        _getErrorMessage(response),
+      );
+    } catch (e) {
+      throw Exception(
+        e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
+      );
+    }
+  }
+
+  // ============================================================
   // GET SUMMARY
   // ============================================================
 
   static Future<Map<String, dynamic>> getSummary() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/transactions/summary'),
+      Uri.parse(
+        '$baseUrl/transactions/summary',
+      ),
       headers: headers,
     );
 
     if (response.statusCode >= 200 &&
         response.statusCode < 300) {
-      final decoded =
-          jsonDecode(response.body);
+      final decoded = jsonDecode(
+        response.body,
+      );
 
       return Map<String, dynamic>.from(
-        decoded,
+        decoded['data'] ?? decoded,
       );
     }
 
@@ -82,12 +220,14 @@ class ApiService {
 
     if (status != null &&
         status.trim().isNotEmpty) {
-      queryParameters['status'] = status;
+      queryParameters['status'] =
+          status;
     }
 
     if (type != null &&
         type.trim().isNotEmpty) {
-      queryParameters['type'] = type;
+      queryParameters['type'] =
+          type;
     }
 
     final uri = Uri.parse(
@@ -113,7 +253,9 @@ class ApiService {
           .map(
             (item) =>
                 TransactionModel.fromJson(
-              Map<String, dynamic>.from(item),
+              Map<String, dynamic>.from(
+                item,
+              ),
             ),
           )
           .toList();
@@ -143,11 +285,14 @@ class ApiService {
       'type': type,
       'amount': amount,
       'status': status,
-      'transactionType': transactionType,
+      'transactionType':
+          transactionType,
     };
 
     final response = await http.post(
-      Uri.parse('$baseUrl/transactions'),
+      Uri.parse(
+        '$baseUrl/transactions',
+      ),
       headers: headers,
       body: jsonEncode(body),
     );
@@ -181,6 +326,7 @@ class ApiService {
     required String type,
     required double amount,
     required String status,
+    String? transactionType,
   }) async {
     final body = {
       'name': name.trim(),
@@ -189,6 +335,11 @@ class ApiService {
       'amount': amount,
       'status': status,
     };
+
+    if (transactionType != null) {
+      body['transactionType'] =
+          transactionType;
+    }
 
     final response = await http.put(
       Uri.parse(
@@ -247,13 +398,23 @@ class ApiService {
     http.Response response,
   ) {
     try {
+      if (response.body.isEmpty) {
+        return 'Request failed (${response.statusCode})';
+      }
+
       final decoded =
           jsonDecode(response.body);
 
-      return decoded['message'] ??
-          'Request failed (${response.statusCode})';
+      if (decoded is Map) {
+        return decoded['message']?.toString() ??
+            decoded['error']?.toString() ??
+            'Request failed (${response.statusCode})';
+      }
+
+      return 'Request failed (${response.statusCode})';
     } catch (_) {
       return 'Request failed (${response.statusCode})';
     }
   }
 }
+
