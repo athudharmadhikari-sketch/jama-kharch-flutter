@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vargani_app/screens/transaction_list_screen.dart';
 
 import '../data/api_service.dart';
 import '../models/transaction_model.dart';
@@ -251,7 +252,14 @@ class _TransactionFormScreenState
         ),
       );
 
-      Navigator.pop(context);
+    Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => const TransactionListScreen(
+      isJama: true,
+    ),
+  ),
+);
     } catch (e) {
       if (!mounted) return;
 

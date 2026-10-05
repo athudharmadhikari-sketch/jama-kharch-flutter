@@ -10,7 +10,7 @@ class ApiService {
   // ============================================================
 
   static const String baseUrl =
-      'http://10.0.2.2:5000/api';
+      'https://jama-kharch-api.onrender.com/api';
 
   // For physical Android phone use your computer IP:
   //
